@@ -100,12 +100,6 @@ exports.startGame = function (
     lobby.isGameOn = true;
     let otherTeam = currentTeam === 1 ? 2 : 1;
     let randomCard;
-	if (action === "faul") {
-      io.in(lobbyId).emit("play-sound", "taboo");
-      room[`team${currentTeam}Score`]++;
-      room.lastOperation = 1;
-      [otherTeam, currentTeam] = [currentTeam, otherTeam];
-	}
     room.isNewTurn = false;
     if (action === "n") {
       room.isNewTurn = true;
@@ -113,7 +107,12 @@ exports.startGame = function (
       io.in(lobbyId).emit("play-sound", "correct");
       room[`team${currentTeam}Score`]++;
       room.lastOperation = 1;
-    } else if (action === "p") {
+    } else if (action === "faul") {
+      io.in(lobbyId).emit("play-sound", "taboo");
+      room[`team${currentTeam}Score`]++;
+      room.lastOperation = 1;
+      [otherTeam, currentTeam] = [currentTeam, otherTeam];
+	}  else if (action === "p") {
       io.in(lobbyId).emit("play-sound", "pass");
       room.lastOperation = 0;
       room.passCount--;
