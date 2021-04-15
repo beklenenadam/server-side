@@ -54,7 +54,6 @@ fs.readFile("words.json", (err, data) => {
 });
 // io.set("heartbeat timeout", 4000);
 // io.set("heartbeat interval", 2000);
-io.set('transports', ['websocket']);
 
 io.engine.generateId = (req) => {
   return Math.random().toString(36).substr(2, 5);
