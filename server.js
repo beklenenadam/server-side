@@ -1,4 +1,3 @@
-
 const express = require("express");
 //const path = require("path");
 const http = require("http");
@@ -7,9 +6,7 @@ const app = express();
 const cors = require("cors");
 const fs = require("fs");
 const evnts = require("events");
-//const uniqid = require("uniqid");
 const { startGame } = require("./game");
-//const { startGame } = require("repl");
 
 app.use((req, res, next) => {
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -28,11 +25,6 @@ app.use(cors());
 
 app.set("port", PORT);
 
-// cors: {
-//   origin: "*",
-//   methods: ["GET", "POST"],
-// },
-
 const server = http.createServer(app);
 const io = require("socket.io")(server, {
   cors: {
@@ -41,28 +33,21 @@ const io = require("socket.io")(server, {
   },
 });
 
-//variables
 let rooms = {};
 let gameRooms = {};
 let roomsSockets = {};
 let roomIntervals = {};
 let toPush = null;
-let tabooCards;
+let faulCards;
 fs.readFile("words.json", (err, data) => {
   if (err) throw err;
-  tabooCards = JSON.parse(data);
+  faulCards = JSON.parse(data);
 });
-// io.set("heartbeat timeout", 4000);
-// io.set("heartbeat interval", 2000);
 
 io.engine.generateId = (req) => {
   return Math.random().toString(36).substr(2, 5);
 };
-//Handle connnection
 io.on("connection", (socket) => {
-  // console.log("rooms", socket.rooms.size);
-  // if (socket.rooms.size === 1) {
-  // }
 
   socket.emit("connected");
   socket.on("create", () => {
@@ -95,9 +80,6 @@ io.on("connection", (socket) => {
     roomIntervals[socket.id] = { myInterval: null };
     rooms[`${socket.id}`].memberCount++;
     rooms[`${socket.id}`].totalConnected++;
-    // rooms[`${socket.id}`].team1.push(
-    //   `user${rooms[`${socket.id}`].totalConnected}`
-    // );
     rooms[`${socket.id}`].team1.push({
       [`${socket.id}`]: `Oyuncu ${rooms[`${socket.id}`].totalConnected}`,
     });
@@ -108,20 +90,8 @@ io.on("connection", (socket) => {
     io.in(socket.id).emit("lobby", rooms[`${socket.id}`]);
   });
 
-  // socket.on("remove-all-listeners", () => {
-  //   //console.log("eventler", socket.eventNames());
-  //   //console.log("eventler", socket.listenersAny());
-  //   //console.log("hmm", getEventListeners(socket, "delete-player"));
-  //   console.log("asda");
-  //   //evnts.getEventListeners(socket, "delete-player");
-  //   socket.removeAllListeners(["game-entered"]);
-  //   socket.removeAllListeners(["toggle-time"]);
-  //   socket.removeAllListeners(["new-card"]);
-  //   socket.removeAllListeners(["delete-player"]);
-  // });
   socket.on("login-lobby", (lobbyId) => {
     if (!rooms[`${lobbyId}`]) {
-      //socket.emit("bad-url");
       console.log("login lobby failed");
       return;
     }
@@ -131,28 +101,18 @@ io.on("connection", (socket) => {
     rooms[`${lobbyId}`].totalConnected++;
     toPush = `Oyuncu ${rooms[`${lobbyId}`].totalConnected}`;
     if (
-      // Object.keys(rooms[`${lobbyId}`].team1).length >
-      // Object.keys(rooms[`${lobbyId}`].team2).length
       rooms[`${lobbyId}`].team1.length > rooms[`${lobbyId}`].team2.length
     ) {
-      //rooms[`${lobbyId}`].team2.push(toPush);
       rooms[`${lobbyId}`].team2.push({ [socket.id]: toPush });
     } else {
-      //rooms[`${lobbyId}`].team1.push(toPush);
-      //rooms[`${lobbyId}`].team1[socket.id] = toPush;
       rooms[`${lobbyId}`].team1.push({ [socket.id]: toPush });
     }
-    //console.log(rooms[`${lobbyId}`]);
     roomsSockets[lobbyId][socket.id] = socket;
     io.in(lobbyId).emit("lobby", rooms[`${lobbyId}`]);
   });
   socket.on("user-ready", (newUserName, lobbyId, currentTeam) => {
-    //startGame(io, socket, rooms[`${lobbyId}`], lobbyId);
     io.in(lobbyId).emit("play-sound-lobby", "ready-toggle");
     rooms[`${lobbyId}`].readyMemberCount++;
-    //console.log("takim", rooms[`${lobbyId}`][`team${currentTeam}`]);
-    //console.log("ismim", rooms[`${lobbyId}`][`team${currentTeam}`][socket.id]);
-    //rooms[`${lobbyId}`][`team${currentTeam}`][socket.id] = newUserName;
     let myIndex;
     rooms[`${lobbyId}`][`team${currentTeam}`].forEach((player, index) => {
       if (Object.keys(player)[0] === socket.id) {
@@ -166,20 +126,9 @@ io.on("connection", (socket) => {
         JSON.stringify(rooms[`${lobbyId}`][`team${currentTeam}`][myIndex])
       );
       gameRooms[lobbyId][`team${currentTeam}`].push(tmpUser);
-
-      // gameRooms[lobbyId].team1 = JSON.parse(
-      //   JSON.stringify(rooms[`${lobbyId}`].team1)
-      // );
-      // gameRooms[lobbyId].team2 = JSON.parse(
-      //   JSON.stringify(rooms[`${lobbyId}`].team2)
-      // );
       gameRooms[lobbyId].memberCount++;
-      //gameRooms[lobbyId].memberCount = rooms[`${lobbyId}`].memberCount;
       gameRooms[lobbyId].readyMemberCount++;
-      //gameRooms[lobbyId].readyMemberCount =
-      //rooms[`${lobbyId}`].readyMemberCount;
       gameRooms[lobbyId].totalConnected++;
-      //gameRooms[lobbyId].totalConnected = rooms[`${lobbyId}`].totalConnected;
 
       socket.emit("enough-players");
       socket.emit("start-game");
@@ -191,8 +140,6 @@ io.on("connection", (socket) => {
           gameRooms[lobbyId].isGameInterrupted = false;
         }
       }
-      // console.log("lobi", rooms[lobbyId]);
-      // console.log("oyun", gameRooms[lobbyId]);
       return;
     }
     if (
@@ -204,13 +151,9 @@ io.on("connection", (socket) => {
       ) {
         io.in(lobbyId).emit("not-enough-players");
       } else {
-        //TODO: Oyunu baslat
-        //rooms[`${lobbyId}`].isGameOn = true;
         gameRooms[lobbyId] = JSON.parse(JSON.stringify(rooms[`${lobbyId}`]));
         io.in(lobbyId).emit("enough-players");
         io.in(lobbyId).emit("start-game");
-        //startGame(io, socket, rooms[`${lobbyId}`], lobbyId);
-        //
       }
     } else {
       io.in(lobbyId).emit("enough-players");
@@ -222,7 +165,7 @@ io.on("connection", (socket) => {
       socket,
       gameRooms[`${lobbyId}`],
       lobbyId,
-      tabooCards,
+      faulCards,
       roomsSockets[lobbyId],
       roomIntervals[lobbyId],
       rooms[`${lobbyId}`]
@@ -237,16 +180,13 @@ io.on("connection", (socket) => {
     console.log("hmm", rdy);
   });
   socket.on("delete-from-lobby", (currentTeam, lobbyId, isReady) => {
-    //socket.removeAllListeners();
     if (!rooms[`${lobbyId}`]) {
-      //socket.emit("bad-url");
       return;
     }
     console.log("im deleting from loby");
     let deletingIndex = rooms[lobbyId][`team${currentTeam}`].findIndex(
       (player) => {
         return Object.keys(player)[0] === socket.id;
-        //console.log(player);
       }
     );
     console.log("delete ondex from lobby", deletingIndex);
@@ -265,15 +205,12 @@ io.on("connection", (socket) => {
     delete roomsSockets[lobbyId][socket.id];
     rooms[lobbyId].roomLeader = Object.keys(roomsSockets[lobbyId])[0];
     io.in(lobbyId).emit("lobby", rooms[lobbyId]);
-    //console.log("lobi", rooms[lobbyId]);
   });
   socket.on("called-leave", () => {
     console.log("im called before leave");
   });
-  // DISCONNECT - TO HANDLE LATER - MAYBE
   socket.on("disconnect", () => {
     console.log("I LOST INTERNET");
-    //io.in(lobbyId).emit("play-sound-lobby", "user-logout");
     let lobbyId = Object.keys(rooms).find(
       (room) => socket.id in roomsSockets[room]
     );
@@ -288,7 +225,6 @@ io.on("connection", (socket) => {
       let deletingIndex = rooms[lobbyId][`team${currentTeam}`].findIndex(
         (player) => {
           return Object.keys(player)[0] === socket.id;
-          //console.log(player);
         }
       );
 
@@ -296,11 +232,6 @@ io.on("connection", (socket) => {
       rooms[lobbyId].memberCount--;
       delete roomsSockets[lobbyId][socket.id];
       rooms[lobbyId].roomLeader = Object.keys(roomsSockets[lobbyId])[0];
-      //console.log(
-      //  gameRooms[lobbyId].isGameOn,
-      //  socket.id in gameRooms[lobbyId][`team${currentTeam}`]
-      //);
-      //console.log(socket.id, gameRooms[lobbyId][`team${currentTeam}`]);
       if (gameRooms[lobbyId].isGameOn) {
         let isInGame = false;
         gameRooms[lobbyId][`team${currentTeam}`].forEach((player) => {
@@ -314,7 +245,6 @@ io.on("connection", (socket) => {
             `team${currentTeam}`
           ].findIndex((player) => {
             return Object.keys(player)[0] === socket.id;
-            //console.log(player);
           });
           gameRooms[lobbyId][`team${currentTeam}`].splice(deletingIndexGame, 1);
           gameRooms[lobbyId].roomLeader = Object.keys(roomsSockets[lobbyId])[0];
@@ -333,7 +263,6 @@ io.on("connection", (socket) => {
               gameRooms[lobbyId][`team${currentTeam}`].length;
             io.in(lobbyId).emit("turn-ended");
           }
-          //handle if not enough players
           if (
             gameRooms[lobbyId].team1.length < 2 ||
             gameRooms[lobbyId].team2.length < 2
@@ -354,16 +283,6 @@ io.on("connection", (socket) => {
     }
   });
 
-  // socket.on("try-start-game", (lobbyId) => {
-  //   //rooms[`${lobbyId}`].isGameOn = true;
-  //   //io.in(lobbyId).emit("enough-players");
-  //   //io.in(lobbyId).emit("start-game");
-  //   //game logic
-  //   gameRooms[lobbyId] = JSON.parse(JSON.stringify(rooms[`${lobbyId}`]));
-  //   //console.log("OYUN BASLADI GAME ROOM", gameRooms[lobbyId]);
-  //   io.in(lobbyId).emit("enough-players");
-  //   io.in(lobbyId).emit("start-game");
-  // });
   socket.on("user-not-ready", (lobbyId) => {
     io.in(lobbyId).emit("play-sound-lobby", "ready-off");
     rooms[`${lobbyId}`].readyMemberCount--;
@@ -372,22 +291,15 @@ io.on("connection", (socket) => {
   socket.on("change-team", (currentTeam, lobbyId, isReady) => {
     io.in(lobbyId).emit("play-sound-lobby", "change-team");
     newTeam = currentTeam === 1 ? 2 : 1;
-    //console.log(currentTeam);
     if (isReady) {
       rooms[`${lobbyId}`].readyMemberCount--;
     }
-    // rooms[`${lobbyId}`][`team${newTeam}`][socket.id] =
-    //   rooms[`${lobbyId}`][`team${currentTeam}`][socket.id];
-    // console.log("yeni takim", newTeam);
-    // delete rooms[`${lobbyId}`][`team${currentTeam}`][socket.id];
     let deletingIndex = rooms[`${lobbyId}`][`team${currentTeam}`].findIndex(
       (player) => {
         return Object.keys(player)[0] === socket.id;
-        //console.log(player);
       }
     );
     let tmpUser = rooms[`${lobbyId}`][`team${currentTeam}`][deletingIndex];
-    //console.log("tmpusr", tmpUser);
     rooms[`${lobbyId}`][`team${currentTeam}`].splice(deletingIndex, 1);
     rooms[`${lobbyId}`][`team${newTeam}`].push(tmpUser);
 
@@ -399,5 +311,4 @@ io.on("connection", (socket) => {
   });
 });
 
-//Start server
 server.listen(PORT);
