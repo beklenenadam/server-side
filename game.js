@@ -12,6 +12,9 @@ exports.startGame = function (
     if (!room.isGameOn) {
       room.timer = room.totalTimer;
       room.passCount = room.totalPassCount;
+	  room.finishCount = room.totalFinishCount;
+	  room.team1Score = room.totalFinishCount + 2;
+	  room.team2Score = room.totalFinishCount;
     } else {
       let myTeam = 2;
       room.team1.forEach((player) => {
@@ -76,12 +79,12 @@ exports.startGame = function (
       room.isNewTurn = true;
     } else if (action === "c") {
       io.in(lobbyId).emit("play-sound", "correct");
-      room[`team${currentTeam}Score`]++;
-      room.lastOperation = 1;
+      room[`team${currentTeam}Score`]--;
+      room.lastOperation = -1;
     } else if (action === "faul") {
       io.in(lobbyId).emit("play-sound", "faul");
-      room[`team${currentTeam}Score`]++;
-      room.lastOperation = 1;
+      room[`team${currentTeam}Score`]--;
+      room.lastOperation = -1;
       [otherTeam, currentTeam] = [currentTeam, otherTeam];
 	}  else if (action === "p") {
       io.in(lobbyId).emit("play-sound", "pass");
@@ -94,6 +97,18 @@ exports.startGame = function (
       randomCard = defaultCard;
       room.lastCard = room.usedCards[room.usedCards.length - 1];
     }
+	if (room.team1Score < 1) {
+	  room.isGame1Finish = true;
+      room.isTimerOn = false;
+      clearInterval(gameInterval.myInterval);
+      io.in(lobbyId).emit("room-update", room);
+	}
+	if (room.team2Score < 1) {
+	  room.isGame2Finish = true;
+      room.isTimerOn = false;
+      clearInterval(gameInterval.myInterval);
+      io.in(lobbyId).emit("room-update", room);
+	}
     if (room.lastCard !== -1 && defaultCard === 0) {
       randomCard = room.lastCard;
       room.lastCard = -1;
