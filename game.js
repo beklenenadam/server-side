@@ -178,7 +178,7 @@ exports.startGame = function (
       return;
     }
     //io.in(lobbyId).emit("play-sound", "logout-game");
-    console.log("im deleting from game", socket.id);
+    //console.log("im deleting from game", socket.id);
     room.memberCount = room.memberCount - 1;
     room.readyMemberCount -= 1;
     //lobby.memberCount -= 1;
@@ -187,7 +187,7 @@ exports.startGame = function (
       return Object.keys(player)[0] === socket.id;
       //console.log(player);
     });
-    console.log(deletingIndex);
+    //console.log(deletingIndex);
     if (deletingIndex === -1) {
       return;
     }
@@ -205,7 +205,7 @@ exports.startGame = function (
     ) {
       room[`overAllTurn${currentTeam}`] =
         room[`overAllTurn${currentTeam}`] % room[`team${currentTeam}`].length;
-      console.log("new turn", room[`overAllTurn${currentTeam}`]);
+      //console.log("new turn", room[`overAllTurn${currentTeam}`]);
 
       io.in(lobbyId).emit("room-update", room);
       io.in(lobbyId).emit("turn-ended");
