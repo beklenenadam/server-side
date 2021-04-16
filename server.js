@@ -1,5 +1,4 @@
 const express = require("express");
-//const path = require("path");
 const http = require("http");
 const PORT = process.env.PORT || 3000;
 const app = express();
@@ -64,6 +63,7 @@ io.on("connection", (socket) => {
       team1Score: 0,
       team2Score: 0,
       passCount: 3,
+	  totalFinishCount: 20,
       timer: 90,
       totalPassCount: 3,
       totalTimer: 90,
@@ -74,6 +74,8 @@ io.on("connection", (socket) => {
       isNewTurn: true,
       isGameOn: false,
       isGameInterrupted: false,
+	  isGame1Finish: false,
+	  isGame2Finish: false,
       roundCount: 0,
       totalRoundCount: 5,
     };
@@ -171,9 +173,10 @@ io.on("connection", (socket) => {
       rooms[`${lobbyId}`]
     );
   });
-  socket.on("timer-passcount-change", (lobbyId, timer, passCount) => {
+  socket.on("timer-passcount-change", (lobbyId, timer, passCount, finishCount) => {
     rooms[`${lobbyId}`].totalTimer = timer;
     rooms[`${lobbyId}`].totalPassCount = passCount;
+	rooms[`${lobbyId}`].totalFinishCount = finishCount;
     io.in(lobbyId).emit("lobby", rooms[`${lobbyId}`]);
   });
   socket.on("hmm", (rdy) => {
