@@ -13,7 +13,7 @@ exports.startGame = function (
       room.timer = room.totalTimer;
       room.passCount = room.totalPassCount;
 	  room.finishCount = room.totalFinishCount;
-	  room.team1Score = room.totalFinishCount + 2;
+	  room.team1Score = Number(room.totalFinishCount) + 2;
 	  room.team2Score = room.totalFinishCount;
     } else {
       let myTeam = 2;
