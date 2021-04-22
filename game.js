@@ -13,6 +13,7 @@ exports.startGame = function (
       room.timer = room.totalTimer;
       room.passCount = room.totalPassCount;
 	  room.finishCount = room.totalFinishCount;
+	  room.maxplayers = room.totalmaxPlayers;
 	  room.team1Score = Number(room.totalFinishCount) + 2;
 	  room.team2Score = room.totalFinishCount;
     } else {
