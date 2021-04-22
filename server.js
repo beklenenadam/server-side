@@ -48,6 +48,7 @@ io.engine.generateId = (req) => {
 };
 io.on("connection", (socket) => {
 
+
   socket.emit("connected");
   socket.on("create", () => {
     rooms[`${socket.id}`] = {
@@ -64,6 +65,7 @@ io.on("connection", (socket) => {
       team2Score: 0,
       passCount: 3,
 	  totalFinishCount: 20,
+	  totalmaxPlayers: 6,
       timer: 90,
       totalPassCount: 3,
       totalTimer: 90,
@@ -83,7 +85,7 @@ io.on("connection", (socket) => {
     rooms[`${socket.id}`].memberCount++;
     rooms[`${socket.id}`].totalConnected++;
     rooms[`${socket.id}`].team1.push({
-      [`${socket.id}`]: `Oyuncu ${rooms[`${socket.id}`].totalConnected}`,
+      [`${socket.id}`]: `Player ${rooms[`${socket.id}`].totalConnected}`,
     });
     roomsSockets[socket.id] = {};
     roomsSockets[socket.id][socket.id] = socket;
@@ -91,27 +93,44 @@ io.on("connection", (socket) => {
     gameRooms[socket.id].isGameOn = false;
     io.in(socket.id).emit("lobby", rooms[`${socket.id}`]);
   });
-
   socket.on("login-lobby", (lobbyId) => {
-    if (!rooms[`${lobbyId}`]) {
-      console.log("login lobby failed");
-      return;
-    }
-    io.in(lobbyId).emit("play-sound-lobby", "user-joined");
-    socket.join(lobbyId);
-    rooms[`${lobbyId}`].memberCount++;
-    rooms[`${lobbyId}`].totalConnected++;
-    toPush = `Oyuncu ${rooms[`${lobbyId}`].totalConnected}`;
-    if (
-      rooms[`${lobbyId}`].team1.length > rooms[`${lobbyId}`].team2.length
-    ) {
-      rooms[`${lobbyId}`].team2.push({ [socket.id]: toPush });
-    } else {
-      rooms[`${lobbyId}`].team1.push({ [socket.id]: toPush });
-    }
-    roomsSockets[lobbyId][socket.id] = socket;
-    io.in(lobbyId).emit("lobby", rooms[`${lobbyId}`]);
+		if (!rooms[`${lobbyId}`]) {
+		  console.log("login lobby failed");
+		  return;
+		}
+	   totalplayerCount = rooms[`${lobbyId}`].memberCount;
+     totalroomLimit = rooms[`${lobbyId}`].totalmaxPlayers;
+     roomLider = rooms[`${lobbyId}`].roomLeader;
+
+    	if (totalplayerCount < totalroomLimit){
+        io.in(lobbyId).emit("play-sound-lobby", "user-joined");
+    		socket.join(lobbyId);
+    		rooms[`${lobbyId}`].memberCount++;
+    		rooms[`${lobbyId}`].totalConnected++;
+    		toPush = `Player ${rooms[`${lobbyId}`].totalConnected}`;
+    		if (
+    		  rooms[`${lobbyId}`].team1.length > rooms[`${lobbyId}`].team2.length
+    		) {
+    		  rooms[`${lobbyId}`].team2.push({ [socket.id]: toPush });
+    		} else {
+    		  rooms[`${lobbyId}`].team1.push({ [socket.id]: toPush });
+    		}
+    		roomsSockets[lobbyId][socket.id] = socket;
+    		io.in(lobbyId).emit("lobby", rooms[`${lobbyId}`]);
+        if (roomLider === undefined){
+          var yonlendir = '/gecersiz-oda';
+          socket.emit('redirect', yonlendir);
+        }
+    	}else{
+    		socket.join(lobbyId);
+    		io.in(lobbyId).emit("lobby", rooms[`${lobbyId}`]);
+
+    		var destination = '/hata';
+    		socket.emit('redirect', destination);
+    	}
   });
+
+
   socket.on("user-ready", (newUserName, lobbyId, currentTeam) => {
     io.in(lobbyId).emit("play-sound-lobby", "ready-toggle");
     rooms[`${lobbyId}`].readyMemberCount++;
@@ -173,14 +192,12 @@ io.on("connection", (socket) => {
       rooms[`${lobbyId}`]
     );
   });
-  socket.on("timer-passcount-change", (lobbyId, timer, passCount, finishCount) => {
+  socket.on("timer-passcount-change", (lobbyId, timer, passCount, finishCount,maxplayers) => {
     rooms[`${lobbyId}`].totalTimer = timer;
     rooms[`${lobbyId}`].totalPassCount = passCount;
 	rooms[`${lobbyId}`].totalFinishCount = finishCount;
+	rooms[`${lobbyId}`].totalmaxPlayers = maxplayers;
     io.in(lobbyId).emit("lobby", rooms[`${lobbyId}`]);
-  });
-  socket.on("hmm", (rdy) => {
-    console.log("hmm", rdy);
   });
   socket.on("delete-from-lobby", (currentTeam, lobbyId, isReady) => {
     if (!rooms[`${lobbyId}`]) {
@@ -200,7 +217,6 @@ io.on("connection", (socket) => {
     io.in(lobbyId).emit("play-sound-lobby", "user-logout");
     rooms[lobbyId].memberCount -= 1;
     if (isReady) {
-      console.log("adam hazir");
       rooms[lobbyId].readyMemberCount -= 1;
     }
 
